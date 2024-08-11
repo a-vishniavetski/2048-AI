@@ -2,18 +2,21 @@ from tkinter import Frame, Label, CENTER
 import random
 import logic
 import constants as c
-from copy import deepcopy
+from history import History
 
 def gen():
     return random.randint(0, c.GRID_LEN - 1)
 
 class GameGrid(Frame):
     def __init__(self):
+        self.history = History("w", dir="history")
+
         Frame.__init__(self)
 
         self.grid()
         self.master.title('2048')
         self.master.bind("<Key>", self.key_down)
+        self.master.protocol('WM_DELETE_WINDOW', self.on_closing)
 
         self.commands = {
             c.KEY_UP: logic.up,
@@ -33,13 +36,14 @@ class GameGrid(Frame):
         self.grid_cells = []
         self.init_grid()
         self.matrix = logic.new_game(c.GRID_LEN)
+        self.history.saveMatrix(self.matrix)
         self.history_matrixs = []
         self.update_grid_cells()
 
         self.mainloop()
 
     def init_grid(self):
-        background = Frame(self, bg=c.BACKGROUND_COLOR_GAME,width=c.SIZE, height=c.SIZE)
+        background = Frame(self, bg=c.BACKGROUND_COLOR_GAME,width=c.GAME_GRID_WIDTH, height=c.GAME_GRID_WIDTH)
         background.grid()
 
         for i in range(c.GRID_LEN):
@@ -48,8 +52,8 @@ class GameGrid(Frame):
                 cell = Frame(
                     background,
                     bg=c.BACKGROUND_COLOR_CELL_EMPTY,
-                    width=c.SIZE / c.GRID_LEN,
-                    height=c.SIZE / c.GRID_LEN
+                    width=c.GAME_GRID_WIDTH / c.GRID_LEN,
+                    height=c.GAME_GRID_WIDTH / c.GRID_LEN
                 )
                 cell.grid(
                     row=i,
@@ -92,7 +96,10 @@ class GameGrid(Frame):
             self.update_grid_cells()
             print('back on step total step:', len(self.history_matrixs))
         elif key in self.commands:
+            # Record history
             self.matrix, done = self.commands[key](self.matrix)
+            self.history.saveMatrix(self.matrix)
+            self.history.saveMove(str(key))
             if done:
                 self.matrix = logic.add_two(self.matrix)
                 # record last move
@@ -110,5 +117,9 @@ class GameGrid(Frame):
         while self.matrix[index[0]][index[1]] != 0:
             index = (gen(), gen())
         self.matrix[index[0]][index[1]] = 2
+
+    def on_closing(self):
+        self.history.close()
+        self.master.destroy()
 
 game_grid = GameGrid()

@@ -19,12 +19,11 @@ class History():
         else:
             self.filename = filename
         if dir is not None:
-            self.filename = dir + "/" + self.filename
+            self.filename = dir + "\\" + self.filename
+        self.filename = os.path.join(os.getcwd(), self.filename)
         
         # Reading
         if mode == "r":
-            if not os.path.exists(self.filename):
-                raise FileNotFoundError(f"File {self.filename} not found")
             self.file = open(self.filename, "r")
             self.moves = list(self.readMoves())
             self.file.seek(0)
@@ -43,9 +42,11 @@ class History():
     
     def saveMatrix(self, matrix):
         """Save the matrix to the file"""
+        print(f"SaveMatrix: {str(matrix)}")
         if self.mode == "r":
             raise ValueError("Cannot save matrix in read mode")
         str_matrix = str(matrix).replace("[", "").replace("]", "").replace(",", "")
+        print(f"StrMatrix: {str_matrix}")
         self.file.write(str_matrix + "\n")
         self.n_of_matrices += 1
 
