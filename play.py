@@ -2,6 +2,7 @@ from tkinter import Frame, Label, CENTER
 import random
 import logic
 import constants as c
+from copy import deepcopy
 
 def gen():
     return random.randint(0, c.GRID_LEN - 1)
@@ -97,10 +98,10 @@ class GameGrid(Frame):
                 # record last move
                 self.history_matrixs.append(self.matrix)
                 self.update_grid_cells()
-                if logic.game_state(self.matrix) == 'win':
+                if logic.game_state(self.matrix) == 1:
                     self.grid_cells[1][1].configure(text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Win!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
-                if logic.game_state(self.matrix) == 'lose':
+                if logic.game_state(self.matrix) == -1:
                     self.grid_cells[1][1].configure(text="You", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Lose!", bg=c.BACKGROUND_COLOR_CELL_EMPTY)
 
