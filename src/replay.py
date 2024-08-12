@@ -7,10 +7,11 @@ import logic
 import constants as c
 from copy import deepcopy
 from history import History
+import numpy as np
 
 
 REPLAY_DIR = "history"
-REPLAY_SPEED = 0.2  # Every _ seconds make a move
+REPLAY_SPEED = 0.1  # Every _ seconds make a move
 
 class GameGrid(Frame):
     
@@ -28,7 +29,7 @@ class GameGrid(Frame):
 
         self.history = None
         # Matrix on 0
-        self.matrix = [[0] * c.GRID_LEN for _ in range(c.GRID_LEN)]
+        self.matrix = np.zeros((c.GRID_LEN, c.GRID_LEN))
         self.current_matrix = 0
         self.history_matrixs = []
 
@@ -155,7 +156,7 @@ class GameGrid(Frame):
         self.update_idletasks()
 
     def update_logic(self):
-        print("Updating logic")
+        # print("Updating logic")
         if not self.playing:
             self.after(self.ms_per_frame, self.update_logic)
             return

@@ -1,11 +1,21 @@
 import random
 import constants as c
+import numpy as np
+from time import perf_counter_ns
+
+# timer decorator
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = perf_counter_ns()
+        result = func(*args, **kwargs)
+        end = perf_counter_ns()
+        print(f"{func.__name__.upper():<9} took {(end-start):<7} ns == {(end-start)/1_000_000:.8f} ms")
+        return result
+    return wrapper
 
 
 def new_game(n):
-    matrix = []
-    for i in range(n):
-        matrix.append([0] * n)
+    matrix = np.zeros((n, n), dtype=int)
     matrix = add_two(matrix)
     matrix = add_two(matrix)
     return matrix
@@ -50,20 +60,20 @@ def game_state(mat):
 
 
 def reverse(mat):
-    new = []
+    new = np.zeros((len(mat), len(mat[0])), dtype=int)
     for i in range(len(mat)):
-        new.append([])
         for j in range(len(mat[0])):
-            new[i].append(mat[i][len(mat[0])-j-1])
+            # new[i].append(mat[i][len(mat[0])-j-1])
+            new[i][j] = mat[i][len(mat[0])-j-1]
     return new
 
 
 def transpose(mat):
-    new = []
+    new = np.zeros((len(mat), len(mat[0])), dtype=int)
     for i in range(len(mat[0])):
-        new.append([])
         for j in range(len(mat)):
-            new[i].append(mat[j][i])
+            # new[i].append(mat[j][i])
+            new[i][j] = mat[j][i]
     return new
 
 
@@ -73,12 +83,7 @@ def transpose(mat):
 # Check the down one. Reverse/transpose if ordered wrongly will give you wrong result.
 
 def cover_up(mat):
-    new = []
-    for j in range(c.GRID_LEN):
-        partial_new = []
-        for i in range(c.GRID_LEN):
-            partial_new.append(0)
-        new.append(partial_new)
+    new = np.zeros((len(mat), len(mat[0])), dtype=int)
     done = False
     for i in range(c.GRID_LEN):
         count = 0
@@ -99,6 +104,7 @@ def merge(mat, done):
                 done = True
     return mat, done
 
+@timer
 def up(game):
     print("up")
     # return matrix after shifting up
@@ -109,6 +115,7 @@ def up(game):
     game = transpose(game)
     return game, done
 
+@timer
 def down(game):
     print("down")
     # return matrix after shifting down
@@ -119,6 +126,7 @@ def down(game):
     game = transpose(reverse(game))
     return game, done
 
+@timer
 def left(game):
     print("left")
     # return matrix after shifting left
@@ -127,6 +135,7 @@ def left(game):
     game = cover_up(game)[0]
     return game, done
 
+@timer
 def right(game):
     print("right")
     # return matrix after shifting right
@@ -136,3 +145,4 @@ def right(game):
     game = cover_up(game)[0]
     game = reverse(game)
     return game, done
+

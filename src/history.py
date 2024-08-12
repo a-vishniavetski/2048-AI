@@ -2,11 +2,13 @@
 from datetime import datetime
 import os
 import numpy as np
+from logic import timer
 
 
 class History():
     """File handling and writing down the moves and board states. Don't forget to call close() when done."""
 
+    @timer
     def __init__(self, mode, filename=None, dir=None):
         """Create a file with the given filename. If no filename is given, use the current date and time."""
         if mode not in ["r", "w"]:
@@ -40,16 +42,19 @@ class History():
         self.number_of_moves = 0
         self.file = open(self.filename, "x")
     
+    @timer
     def saveMatrix(self, matrix):
         """Save the matrix to the file"""
-        print(f"SaveMatrix: {str(matrix)}")
+        # print(f"SaveMatrix: {str(matrix)}")
         if self.mode == "r":
             raise ValueError("Cannot save matrix in read mode")
+        matrix = np.matrix.flatten(matrix)
         str_matrix = str(matrix).replace("[", "").replace("]", "").replace(",", "")
-        print(f"StrMatrix: {str_matrix}")
+        # print(f"StrMatrix: {str_matrix}")
         self.file.write(str_matrix + "\n")
         self.n_of_matrices += 1
 
+    @timer
     def loadMatrix(self, index):
         """Static. Load the initial matrix from the file."""
         if self.mode == "w":
@@ -66,7 +71,8 @@ class History():
         # print(f"Matrix: {str(matrix)}")
         matrix = np.array(matrix).reshape(4, 4)
         return matrix
-        
+    
+    @timer
     def saveMove(self, move):
         """Add move to the list of moves. List will be save at the end."""
         if self.mode == "r":

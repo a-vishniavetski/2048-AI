@@ -3,6 +3,7 @@ import numpy as np
 import keras as kr
 from keras import layers
 import logic as lgc
+from logic import timer
 from history import History
 
 
@@ -27,19 +28,22 @@ REWARDS = {
     'CONTINUE': 0,
 }
 
+@timer
 def choose_action(state, exploration_rate):
     """Returns encoded action"""
     if np.random.uniform(0, 1) > exploration_rate:
-        action = np.argmax(model.predict(state)[0, 0, :])
+        batch_state = state.reshape(1, 4, 4)
+        action = np.argmax(model.predict(batch_state)[0, 0, :])
     else:
         action = np.random.randint(0, 4)
     return action
 
-
+@timer
 def do_action(state, action):
     """Returns new state and evaluates reward and game state"""
     new_state, done = INDEX_TO_ACTION_FUNCTION[action](state)
-    if new_state == state:
+    lgc.add_two(new_state)
+    if np.array_equal(state, new_state):
         return new_state, REWARDS['NO_RESULT'], False
     game_state = lgc.game_state(new_state)
     if game_state == 1:
@@ -47,6 +51,22 @@ def do_action(state, action):
     if game_state == -1:
         return new_state, REWARDS['LOSE'], True
     return new_state, REWARDS['CONTINUE'], False
+
+@timer
+def update_qtable(state, action, reward, new_state):
+    """Updates Q-table"""
+    batch_state = state.reshape(1, 4, 4)
+    batch_new_state = new_state.reshape(1, 4, 4)
+    if game_ended:
+        target_action_qvalue = reward
+    else:
+        target_action_qvalue = np.max(model.predict(batch_state, verbose=False)[0, 0, :]) * (1 - learning_rate) + \
+                learning_rate * (reward + discount_rate * np.max(model.predict(batch_new_state, verbose=False)[0, 0, :]))
+    target_qvalues = model.predict(batch_state, verbose=False)
+    target_qvalues[0, 0, action] = target_action_qvalue
+    timed_fit = timer(model.fit)
+    timed_fit(batch_state, target_qvalues, epochs=1, verbose=0)
+
 
 MODEL_NICKNAME = "ProtoOrganism"
 model = kr.models.Sequential([
@@ -59,14 +79,9 @@ model = kr.models.Sequential([
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-# state = lgc.new_game(n=4)
-# state = np.array(state).reshape(1, 4, 4)
-# print(state)
-# print(model.predict(state))
-
 # Hyperparameters
-number_of_games = 3
-max_moves = 3000
+number_of_games = 1
+max_moves = 100
 
 learning_rate = 0.001
 discount_rate = 0.99
@@ -78,6 +93,7 @@ exploration_decay_rate = 0.01
 
 rewards_all_games = []
 for game in range(number_of_games):
+    print(f"---------------GAME {game}---------------")
     state = lgc.new_game(n=4)
     done = False
     rewards_current_game = 0
@@ -86,25 +102,19 @@ for game in range(number_of_games):
     history.saveMatrix(state)
 
     for move in range(max_moves):
-        
+        print(f"-----Move {move}-----")
         # Choose action
         action = choose_action(state, exploration_rate)
         new_state, reward, game_ended = do_action(state, action)
+
+        print(f"Action: {INDEX_TO_ACTION[action]}")
 
         # Save history
         history.saveMatrix(new_state)
         history.saveMove(INDEX_TO_ACTION[action])
 
         # Update Q-table
-        if game_ended:
-            target_action_qvalue = reward
-        else:
-            target_action_qvalue = model.predict(state)[0, 0, :] * (1 - learning_rate) + \
-                learning_rate * (reward + discount_rate * np.max(model.predict(new_state)[0, 0, :]))
-        
-        target_qvalues = model.predict(state)
-        target_qvalues[0, 0, action] = target_action_qvalue
-        model.fit(state, target_qvalues, epochs=1, verbose=0)
+        update_qtable(state, action, reward, new_state)
 
         state = new_state
         rewards_current_game += reward
@@ -122,6 +132,6 @@ for game, rewards in enumerate(rewards_all_games):
     print(f"Game {game} avg. reward: {rewards} ")
 
 # Updated model weights
-model.save(f"models/{MODEL_NICKNAME}.h5")
+model.save(f"models/{MODEL_NICKNAME}.keras")
 # Print them
 print(model.get_weights())

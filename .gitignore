@@ -1,10 +1,14 @@
 # vscode
 .vscode/settings.json
+.vscode/
 
 # python
 *.pyc
 __pycache__
 
+*.hp5
+*.keras
+*.json
 *.txt
 .venv
 .venv/
